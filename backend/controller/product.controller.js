@@ -109,3 +109,100 @@ exports.deleteProduct = async (req, res) => {
     }
     res.status(resp.status).send(resp)
 }
+
+exports.addReview = async (req, res) => {
+    let resp;
+    try {
+        let { rating, comment, productId } = req.body;
+
+        const review = {
+            userId: req.user._id,
+            name: req.user.name,
+            rating: Number(rating),
+            comment
+        }
+
+        let product = await productModel.findOne({ _id: productId })
+
+        if (!product) throw ("Product not found")
+
+        const isReviewed = product.reviews.find((i) => i.userId.toString() === req.user._id.toString())
+
+
+        if (isReviewed) {
+            for (let i of product.reviews) {
+                if (i.userId.toString() == req.user._id.toString()) {
+                    i.rating = review.rating
+                    i.comment = review.comment
+                }
+            }
+        } else {
+            product.reviews.push(review)
+            product.numOfReviews = product.reviews.length
+        }
+        let ratings;
+        let sum = 0;
+        if (product.reviews.length > 0) {
+            ratings = product.reviews.map(i => {
+                sum = sum + i.rating
+            })
+            ratings = sum
+        }
+        product.ratings = (ratings / product.reviews.length).toFixed(2)
+
+        product.save({ validateBeforeSave: false })
+
+        resp = successResposne({}, "Ratings updated")
+
+    } catch (error) {
+        console.log(error)
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
+
+exports.getProductReview = async (req, res) => {
+    let resp;
+
+    try {
+        let product = await productModel.findOne({ _id: req.query.productId })
+        if (!product) throw ("Product not found")
+
+        resp = successResposne(product.reviews, "Product Reviews fetched")
+
+    } catch (error) {
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
+
+exports.deleteReview = async (req, res) => {
+    let resp;
+    try {
+        let product = await productModel.findOne({ _id: req.query.productId })
+        if (!product) throw ("Product not found")
+
+        if (product.reviews.length > 0) {
+            let reviews = product.reviews.filter(i => i.userId.toString() !== req.query.id.toString())
+            let sum = 0;
+            reviews.map(i => {
+                sum = sum + i.rating
+            })
+            let ratings = sum / reviews.length
+            let numOfReviews = reviews.length
+            await productModel.findOneAndUpdate({ _id: req.query.productId }, {
+                reviews,
+                ratings,
+                numOfReviews
+            })
+            resp = successResposne({},"Review deleted successfully")
+        }
+        else {
+            throw ("Reviews not found")
+        }
+
+    } catch (error) {
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
