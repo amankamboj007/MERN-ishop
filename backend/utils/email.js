@@ -14,7 +14,7 @@ const sendEmail = async (options) => {
 
     })
     let mailConfig = {
-        from: "ishop.mern@gmail.com",
+        from: process.env.FROM_EMAIL,
         to: options.email,
         subject: options.title,
         text: options.message

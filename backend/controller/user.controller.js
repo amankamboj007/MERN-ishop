@@ -154,3 +154,86 @@ exports.updatePassword = async (req, res) => {
     }
     res.send(resp).status(resp.status)
 }
+
+exports.updateProfile = async (req, res) => {
+    let resp;
+    try {
+        let user = await userModel.findOne({ _id: req.user.id })
+
+        let update = {
+            email: req.body.email ? req.body.email : user.email,
+            name: req.body.name ? req.body.name : user.name
+        }
+
+        let updatedUser = await userModel.findOneAndUpdate({ _id: req.user.id }, update, {
+            new: true
+        })
+        resp = successResposne(updatedUser, "user profile Updated ")
+
+    } catch (error) {
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
+
+exports.getAllUsers = async (req, res) => {
+    let resp;
+    try {
+        let userList = await userModel.find({ role: "user" })
+
+        resp = successResposne(userList, "UserList fetched")
+    } catch (error) {
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
+exports.getUser = async (req, res) => {
+    let resp;
+    try {
+        let user = await userModel.findOne({ _id: req.params.id })
+        if (!user) throw ("user not found")
+        resp = successResposne(user, "User fetched")
+    } catch (error) {
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
+exports.userUpdate = async (req, res) => {
+    let resp;
+    try {
+        let user = await userModel.findOne({ _id: req.params.id })
+
+        let update = {
+            email: req.body.email ? req.body.email : user.email,
+            name: req.body.name ? req.body.name : user.name,
+            role: req.body.role ? req.body.role : user.role,
+        }
+
+        let updatedUser = await userModel.findOneAndUpdate({ _id: req.params.id }, update, {
+            new: true
+        })
+        resp = successResposne(updatedUser, "user profile Updated ")
+
+    } catch (error) {
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
+
+exports.deleteUser = async (req, res) => {
+    let resp;
+    try {
+        let user = await userModel.findOne({ _id: req.params.id })
+        if (!user) {
+            throw ("User not found")
+        }
+
+        await user.remove()
+
+        resp = successResposne({}, "user deleted successfully")
+
+    } catch (error) {
+        resp = errorResponse(error || error.message, 400)
+    }
+    res.send(resp).status(resp.status)
+}
